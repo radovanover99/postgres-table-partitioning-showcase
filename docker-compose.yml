@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: pg-partitioning-showcase
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ledgerdb
+      # Pin the server's timezone. Partition bounds on a timestamptz
+      # column are resolved with the SESSION TimeZone at DDL time, so a
+      # cluster that is not UTC will happily give you month boundaries
+      # at 23:00 the previous day.
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      # PostgreSQL 18 CHANGED THE EXPECTED MOUNT POINT.
+      # It is /var/lib/postgresql now, NOT /var/lib/postgresql/data.
+      # Reusing a PG17-era compose file here gives you a crash loop.
+      - pgdata:/var/lib/postgresql
+      - ./sql:/sql:ro
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      # Every partition a statement touches consumes a lock slot. Bump
+      # this before you go past a few hundred partitions.
+      - -c
+      - max_locks_per_transaction=256
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - log_lock_waits=on
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ledgerdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

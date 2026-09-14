@@ -197,7 +197,7 @@ partition. Make `(id, created_at)` the lookup contract in your API, not just
 in the schema.
 
 **2. Every unique constraint must contain the partition key.**
-There is no global index in Postgres. `PRIMARY KEY (entry_id)` is rejected;
+⚠️⚠️⚠️**There is no global index in Postgres**⚠️⚠️⚠️. `PRIMARY KEY (entry_id)` is rejected;
 you get `PRIMARY KEY (entry_id, created_at)`. Idempotency keys are the usual
 casualty — if you need a truly global one, keep it in a small unpartitioned
 side table.
